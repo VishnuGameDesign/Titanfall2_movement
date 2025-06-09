@@ -27,7 +27,7 @@ void UWallRun::TickState(float DeltaTime)
 	}		
 	else
 	{
-		RequestStateSwitch("OffTheWall");
+		RequestStateSwitch("InAir");
 	}
 
 	if (PlayerControllerInterface->HasJumpRequested())

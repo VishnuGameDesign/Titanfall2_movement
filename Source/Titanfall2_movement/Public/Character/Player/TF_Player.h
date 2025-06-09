@@ -200,7 +200,7 @@ protected:
 private:
 	bool bIsRunningOnWall = false;
 	bool bWallDetected = false;
-	bool bInitCheckForWalls = false;
+	bool bInitCheckForWalls = true;
 	TScriptInterface<IRunnableWallInterface> RunnableWall;
 	AActor* CheckWall(const FVector& Direction, FHitResult& HitResult);
 	void StartWallRunIfRightDirection(const FVector& Normal);

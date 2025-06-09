@@ -9,7 +9,7 @@
 class IPlayerControllerInterface;
 class ATF_Player;
 
-UCLASS(Abstract)
+UCLASS(Abstract, Blueprintable, BlueprintType)
 class TITANFALL2_MOVEMENT_API UPlayerBaseState : public UStateBase
 {
 	GENERATED_BODY()

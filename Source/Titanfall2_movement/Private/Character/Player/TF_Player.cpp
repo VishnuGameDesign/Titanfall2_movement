@@ -5,6 +5,7 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "DrawDebugHelpers.h"
+#include "Controller/TF_PlayerController.h"
 
 ATF_Player::ATF_Player()
 {
@@ -34,35 +35,35 @@ void ATF_Player::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (!GetCheckForWalls())
-		return;
-	
 	/* Wall Run Trace */
-	FHitResult RightHit, LeftHit;
-	AActor* RightWall = CheckWall(GetActorRightVector(), RightHit);
-	AActor* LeftWall = CheckWall(-GetActorRightVector(), LeftHit);
+	if (GetCheckForWalls())
+	{
+		FHitResult RightHit, LeftHit;
+		AActor* RightWall = CheckWall(GetActorRightVector(), RightHit);
+		AActor* LeftWall = CheckWall(-GetActorRightVector(), LeftHit);
 	
-	if (RightWall)
-	{
-		bWallDetected = true;
-		RunnableWall = RightWall;
-		if (RunnableWall)
+		if (RightWall)
 		{
-			StartWallRunIfRightDirection(RightHit.Normal);
+			bWallDetected = true;
+			RunnableWall = RightWall;
+			if (RunnableWall)
+			{
+				StartWallRunIfRightDirection(RightHit.Normal);
+			}
 		}
-	}
-	else if (LeftWall)
-	{
-		bWallDetected = true;
-		RunnableWall = LeftWall;
-		if (RunnableWall)
+		else if (LeftWall)
 		{
-			StartWallRunIfRightDirection(LeftHit.Normal);
+			bWallDetected = true;
+			RunnableWall = LeftWall;
+			if (RunnableWall)
+			{
+				StartWallRunIfRightDirection(LeftHit.Normal);
+			}
 		}
-	}
-	else
-	{
-		bWallDetected = false;
+		else
+		{
+			bWallDetected = false;
+		}
 	}
 	
 	/* Camera Tilt when Wall Running */
@@ -103,9 +104,13 @@ void ATF_Player::StartWallRunIfRightDirection(const FVector& Normal)
 	{
 		WallNormal = Normal;
 		/* Switch to WallRunning State */
-		if (GetCharacterMovement()->IsFalling() && bIsRunningOnWall == false)				
+		ATF_PlayerController* PlayerController = Cast<ATF_PlayerController>(GetController());
+		if (PlayerController)
 		{
-			GetStateMachineComponent()->SwitchStateByKey("WallRun");
+			if (GetCharacterMovement()->IsFalling() && bIsRunningOnWall == false)				
+			{
+				GetStateMachineComponent()->SwitchStateByKey("WallRun");
+			}
 		}
 	}
 }
