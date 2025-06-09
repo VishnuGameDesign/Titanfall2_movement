@@ -5,11 +5,11 @@
 #include "CoreMinimal.h"
 #include "StateMachineComponent.h"
 #include "Character/TF_CharacterBase.h"
+#include "Interfaces/RunnableWallInterface.h"
 #include "TF_Player.generated.h"
 
 #define ECC_WALL_RUN ECC_GameTraceChannel1
 
-class IRunnableWallInterface;
 class UCameraComponent;
 class USpringArmComponent;
 
@@ -20,6 +20,7 @@ class TITANFALL2_MOVEMENT_API ATF_Player : public ATF_CharacterBase
 
 public:
 	ATF_Player();
+	UFUNCTION()
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 
@@ -49,7 +50,7 @@ public:
 	bool GetCrouchingState() const { return StartCrouching; }
 	
 	UFUNCTION(BlueprintCallable)
-	void SetBeginCrouching(bool value) { StartCrouching = value; }
+	void SetBeginCrouching(const bool bValue) { StartCrouching = bValue; }
 
 	UFUNCTION(BlueprintCallable)
 	float GetDoubleJumpVelocity() const { return DoubleJumpZVelocity; }
@@ -67,16 +68,19 @@ public:
 	float GetSlideDuration() const { return SlideDuration; }
 	
 	UFUNCTION(BlueprintCallable)
-	bool GetIsRunningOnWall() const { return IsRunningOnWall; }
+	bool GetIsRunningOnWall() const { return bIsRunningOnWall; }
 
 	UFUNCTION(BlueprintCallable)
-	void SetIsRunningOnWall(bool bValue) { IsRunningOnWall = bValue; }
+	void SetIsRunningOnWall(bool bValue) { bIsRunningOnWall = bValue; }
 
 	UFUNCTION(BlueprintCallable)
 	float GetWallRunSpeed() const { return WallRunSpeed; }
 	
 	UFUNCTION(BlueprintCallable)
 	FVector GetWallNormal() const { return WallNormal; }
+
+	UFUNCTION(BlueprintCallable)
+	float GetWallRunDuration() const { return WallRunDuration; }
 
 	UFUNCTION(BlueprintCallable)
 	float GetFacingDirection() const { return FacingDirection; }
@@ -101,6 +105,15 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	float GetCameraTiltInterpSpeed() const { return CameraTiltInterpSpeed; }
+
+	UFUNCTION(BlueprintCallable)
+	bool GetWallDetected() const { return bWallDetected; }
+
+	UFUNCTION(BlueprintCallable)
+	bool GetCheckForWalls() const { return bInitCheckForWalls; }
+
+	UFUNCTION(BlueprintCallable)
+	void SetCheckForWalls(const bool bValue) { bInitCheckForWalls = bValue; } 
 
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Camera")
@@ -157,6 +170,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Wall Run")
 	FVector WallNormal = FVector::ZeroVector;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Wall Run")
+	float WallRunDuration = 3.0f;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Wall Jump")
 	float JumpXForce = 300.f;
 
@@ -182,9 +198,11 @@ protected:
 	TObjectPtr<UStateMachineComponent> StateMachineComponent;
 	
 private:
-	bool IsRunningOnWall = false;
+	bool bIsRunningOnWall = false;
+	bool bWallDetected = false;
+	bool bInitCheckForWalls = false;
 	TScriptInterface<IRunnableWallInterface> RunnableWall;
 	AActor* CheckWall(const FVector& Direction, FHitResult& HitResult);
-	void CheckFacingWallDirection(const FVector& Normal);
-	void CameraTiltTo(float Roll);
+	void StartWallRunIfRightDirection(const FVector& Normal);
+	void CameraTiltTo(float Roll) const;
 };

@@ -18,6 +18,5 @@ protected:
 	virtual void ExitState() override;
 
 private:
-	UPROPERTY()
-	TObjectPtr<AController> Controller;
+	float ElapsedTime = 0.0f;
 };

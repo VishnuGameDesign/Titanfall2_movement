@@ -4,9 +4,7 @@
 #include "../../../../../Plugins/StateMachine/Source/StateMachine/Public/StateMachineComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "Interfaces/RunnableWallInterface.h"
 #include "DrawDebugHelpers.h"
-#include "PlayerStates/WallRun.h"
 
 ATF_Player::ATF_Player()
 {
@@ -30,41 +28,47 @@ void ATF_Player::BeginPlay()
 {
 	Super::BeginPlay();
 	StateMachineComponent->InitStateMachineComponent();
-
-	// TODO: WallRunDuration
 }
 
 void ATF_Player::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (!GetCheckForWalls())
+		return;
 	
 	/* Wall Run Trace */
 	FHitResult RightHit, LeftHit;
-		
 	AActor* RightWall = CheckWall(GetActorRightVector(), RightHit);
 	AActor* LeftWall = CheckWall(-GetActorRightVector(), LeftHit);
 	
 	if (RightWall)
 	{
+		bWallDetected = true;
 		RunnableWall = RightWall;
 		if (RunnableWall)
 		{
-			CheckFacingWallDirection(RightHit.Normal);
+			StartWallRunIfRightDirection(RightHit.Normal);
 		}
 	}
 	else if (LeftWall)
 	{
+		bWallDetected = true;
 		RunnableWall = LeftWall;
 		if (RunnableWall)
 		{
-			CheckFacingWallDirection(LeftHit.Normal);
+			StartWallRunIfRightDirection(LeftHit.Normal);
 		}
 	}
-
-	/* Camera Tilt when Wall Running */
-	if (IsRunningOnWall)
+	else
 	{
-		float Roll = GetCameraTiltAngle() * GetFacingDirection();
+		bWallDetected = false;
+	}
+	
+	/* Camera Tilt when Wall Running */
+	if (bIsRunningOnWall)
+	{
+		const float Roll = GetCameraTiltAngle() * GetFacingDirection();
 		CameraTiltTo(Roll);
 	}
 	else
@@ -92,30 +96,28 @@ AActor* ATF_Player::CheckWall(const FVector& Direction, FHitResult& HitResult)
 	return nullptr;
 }
 
-void ATF_Player::CheckFacingWallDirection(const FVector& Normal)
+void ATF_Player::StartWallRunIfRightDirection(const FVector& Normal)
 {
 	FacingDirection = FVector::DotProduct(GetActorRightVector(), Normal);
 	if (FMath::Abs(FacingDirection) > 0.8f)
 	{
 		WallNormal = Normal;
 		/* Switch to WallRunning State */
-		if (GetCharacterMovement()->IsFalling())
+		if (GetCharacterMovement()->IsFalling() && bIsRunningOnWall == false)				
 		{
 			GetStateMachineComponent()->SwitchStateByKey("WallRun");
-			SetIsRunningOnWall(true);
 		}
 	}
 }
 
-void ATF_Player::CameraTiltTo(float Roll)
+void ATF_Player::CameraTiltTo(const float Roll) const
 {
-	FRotator CurrentRot = GetController()->GetControlRotation();
+	const FRotator CurrentRot = GetController()->GetControlRotation();
 	const float Pitch = CurrentRot.Pitch; 
 	const float Yaw = CurrentRot.Yaw;
 	FRotator TargetRot = FRotator(Pitch, Yaw, Roll);
 	FRotator NewRot = FMath::RInterpConstantTo(CurrentRot, TargetRot, GetWorld()->GetDeltaSeconds(), GetCameraTiltInterpSpeed());
 	GetController()->SetControlRotation(NewRot);
 }
-
 
 

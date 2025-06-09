@@ -4,6 +4,11 @@
 #include "PlayerStates/Idle.h"
 #include "Interfaces/PlayerControllerInterface.h"
 
+void UIdle::EnterState(AActor* Owner)
+{
+	Super::EnterState(Owner);
+}
+
 void UIdle::TickState(float DelaTime)
 {
 	Super::TickState(DelaTime);

@@ -3,36 +3,34 @@
 
 
 #include "PlayerStates/WallRun.h"
-
-#include "MaterialHLSLTree.h"
 #include "Character/Player/TF_Player.h"
-#include "GameFramework/CharacterMovementComponent.h"
 #include "Interfaces/PlayerControllerInterface.h"
 
 void UWallRun::EnterState(AActor* Owner)
 {
 	Super::EnterState(Owner);
-	
-	Controller = CastChecked<AController>(PlayerCharacter->GetController());
-
-	const FVector LaunchVelocity = FVector::CrossProduct(PlayerCharacter->GetWallNormal(),
-		PlayerCharacter->GetActorUpVector()) * PlayerCharacter->GetWallRunSpeed() * PlayerCharacter->GetFacingDirection();
-
-	PlayerCharacter->LaunchCharacter(LaunchVelocity, true, true);
+	PlayerCharacter->SetIsRunningOnWall(true);
+	ElapsedTime = 0.0f;
+	UE_LOG(LogTemp, Warning, TEXT("entered"));
 }
 
 void UWallRun::TickState(float DeltaTime)
 {
 	Super::TickState(DeltaTime);
-	if (PlayerCharacter->GetIsRunningOnWall() == false)
+	ElapsedTime += DeltaTime;
+	if (PlayerCharacter->GetWallDetected() && ElapsedTime <= PlayerCharacter->GetWallRunDuration())
 	{
-		IsPlayerMoving() ? RequestStateSwitch("Walk") : RequestStateSwitch("Idle");
-	}
-	if (!PlayerCharacter->GetCharacterMovement()->IsFalling())
+		const FVector LaunchVelocity = FVector::CrossProduct(PlayerCharacter->GetWallNormal(),
+			PlayerCharacter->GetActorUpVector()) * PlayerCharacter->GetWallRunSpeed() * PlayerCharacter->GetFacingDirection();
+
+		PlayerCharacter->LaunchCharacter(LaunchVelocity, true, true);
+	}		
+	else
 	{
-		IsPlayerMoving() ? RequestStateSwitch("Walk") : RequestStateSwitch("Idle");
+		RequestStateSwitch("OffTheWall");
 	}
-	else if (PlayerCharacter->GetCharacterMovement()->IsFalling() && PlayerControllerInterface->HasJumpRequested())
+
+	if (PlayerControllerInterface->HasJumpRequested())
 	{
 		RequestStateSwitch("WallJump");
 	}
