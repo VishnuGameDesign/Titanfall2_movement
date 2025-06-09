@@ -83,6 +83,9 @@ public:
 	float GetWallRunDuration() const { return WallRunDuration; }
 
 	UFUNCTION(BlueprintCallable)
+	float GetWallRunCooldown() const { return WallRunCooldown; }
+
+	UFUNCTION(BlueprintCallable)
 	float GetFacingDirection() const { return FacingDirection; }
 
 	UFUNCTION(BlueprintCallable)
@@ -172,6 +175,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Wall Run")
 	float WallRunDuration = 3.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Wall Run")
+	float WallRunCooldown = 3.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Wall Jump")
 	float JumpXForce = 300.f;

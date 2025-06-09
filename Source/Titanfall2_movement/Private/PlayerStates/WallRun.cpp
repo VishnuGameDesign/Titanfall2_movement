@@ -18,16 +18,19 @@ void UWallRun::TickState(float DeltaTime)
 {
 	Super::TickState(DeltaTime);
 	ElapsedTime += DeltaTime;
-	if (PlayerCharacter->GetWallDetected() && ElapsedTime <= PlayerCharacter->GetWallRunDuration())
+	UE_LOG(LogTemp, Warning, TEXT("ELAPSED_TIME: %f"), ElapsedTime);
+	if (PlayerCharacter->GetWallDetected())
 	{
 		const FVector LaunchVelocity = FVector::CrossProduct(PlayerCharacter->GetWallNormal(),
 			PlayerCharacter->GetActorUpVector()) * PlayerCharacter->GetWallRunSpeed() * PlayerCharacter->GetFacingDirection();
 
 		PlayerCharacter->LaunchCharacter(LaunchVelocity, true, true);
-	}		
-	else
+	}
+	if (ElapsedTime >= PlayerCharacter->GetWallRunCooldown())
 	{
-		RequestStateSwitch("InAir");
+		PlayerCharacter->SetCheckForWalls(false);
+		PlayerCharacter->SetIsRunningOnWall(false);
+		RequestStateSwitch("Jump");
 	}
 
 	if (PlayerControllerInterface->HasJumpRequested())
