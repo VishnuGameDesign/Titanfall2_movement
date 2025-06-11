@@ -5,11 +5,15 @@
 #include "CoreMinimal.h"
 #include "StateMachineComponent.h"
 #include "Character/TF_CharacterBase.h"
+#include "GameFramework/SpringArmComponent.h"
 #include "Interfaces/RunnableWallInterface.h"
 #include "TF_Player.generated.h"
 
 #define ECC_WALL_RUN ECC_GameTraceChannel1
 
+class IPickupableInterface;
+class IInteractableInterface;
+class USphereComponent;
 class UCameraComponent;
 class USpringArmComponent;
 
@@ -20,9 +24,11 @@ class TITANFALL2_MOVEMENT_API ATF_Player : public ATF_CharacterBase
 
 public:
 	ATF_Player();
-	UFUNCTION()
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
+	
+	UFUNCTION(BlueprintCallable)
+	void InitInteraction();
 
 	/* Helper Functions */
 	UFUNCTION(BlueprintCallable)
@@ -116,7 +122,25 @@ public:
 	bool GetCheckForWalls() const { return bInitCheckForWalls; }
 
 	UFUNCTION(BlueprintCallable)
-	void SetCheckForWalls(const bool bValue) { bInitCheckForWalls = bValue; } 
+	void SetCheckForWalls(const bool bValue) { bInitCheckForWalls = bValue; }
+
+	UFUNCTION(BlueprintCallable)
+	FName GetWeaponSocketName() const { return WeaponSocketName; };
+
+	UFUNCTION(BlueprintCallable)
+	USkeletalMeshComponent* GetPlayerSkeletalMeshComponent() const { return PlayerMesh; };
+
+	UFUNCTION(BlueprintCallable)
+	void SetIsCarryingWeapon(const bool bValue) { bIsCarryingWeapon = bValue; }
+
+	UFUNCTION(BlueprintCallable)
+	bool GetIsCarryingWeapon() const { return bIsCarryingWeapon; }
+
+	UFUNCTION(BlueprintCallable)
+	void SetIsShooting(const bool bValue) { bIsShooting = bValue; }
+
+	UFUNCTION(BlueprintCallable)
+	bool GetIsShooting() const { return bIsShooting; }
 
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Camera")
@@ -176,9 +200,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Wall Run")
 	float WallRunDuration = 3.0f;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Wall Run")
-	float WallRunCooldown = 3.0f;
-
 	UPROPERTY(EditDefaultsOnly, Category = "Wall Jump")
 	float JumpXForce = 300.f;
 
@@ -200,15 +221,30 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Wall Run Camera Settings")
 	float CameraTiltInterpSpeed = 10.f;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	FName WeaponSocketName = "";
+	
 	UPROPERTY(EditDefaultsOnly, Category = "StateMachine")
 	TObjectPtr<UStateMachineComponent> StateMachineComponent;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "InteractionSphere")
+	TObjectPtr<USphereComponent> InteractionSphere;
 	
 private:
 	bool bIsRunningOnWall = false;
 	bool bWallDetected = false;
 	bool bInitCheckForWalls = true;
+	bool bIsCarryingWeapon = false;
+	bool bIsShooting = false;
+	// interfaces
 	TScriptInterface<IRunnableWallInterface> RunnableWall;
+	TScriptInterface<IInteractableInterface> Interactable;
+	TScriptInterface<IPickupableInterface> Pickupable;
+	
 	AActor* CheckWall(const FVector& Direction, FHitResult& HitResult);
 	void StartWallRunIfRightDirection(const FVector& Normal);
 	void CameraTiltTo(float Roll) const;
+	float ElapsedTime = 0.0f;
+	float WallRunCooldown = 0.0f;
+	bool bCooldownStarted = false;
 };

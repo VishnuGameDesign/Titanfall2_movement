@@ -5,6 +5,8 @@
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
 #include "Character/Player/TF_Player.h"
+#include "Interfaces/InteractableInterface.h"
+#include "Kismet/GameplayStatics.h"
 
 
 ATF_PlayerController::ATF_PlayerController()
@@ -43,6 +45,10 @@ void ATF_PlayerController::SetupInputComponent()
 	EnhancedInput->BindAction(JumpAction, ETriggerEvent::Completed, this, &ATF_PlayerController::StopJump);
 	EnhancedInput->BindAction(CrouchAction, ETriggerEvent::Started, this, &ATF_PlayerController::StartCrouch);
 	EnhancedInput->BindAction(CrouchAction, ETriggerEvent::Completed, this, &ATF_PlayerController:: StopCrouch);
+	EnhancedInput->BindAction(InteractAction, ETriggerEvent::Started, this, &ATF_PlayerController::CheckForInteractable);
+	EnhancedInput->BindAction(ShootAction, ETriggerEvent::Triggered, this, &ATF_PlayerController::StartShooting);
+	EnhancedInput->BindAction(ShootAction, ETriggerEvent::Completed, this, &ATF_PlayerController::StopShooting);
+	EnhancedInput->BindAction(ShootAction, ETriggerEvent::Canceled, this, &ATF_PlayerController::StopShooting);
 }
 
 void ATF_PlayerController::OnPossess(APawn* InPawn)
@@ -96,6 +102,27 @@ void ATF_PlayerController::StopCrouch(const FInputActionValue& InputValue)
 	bCrouchRequested = false;
 	if (!bCrouchPressed)
 		PlayerCharacter->SetBeginCrouching(false);
+}
+
+void ATF_PlayerController::CheckForInteractable(const FInputActionValue& InputValue)
+{
+	PlayerCharacter->InitInteraction();
+}
+
+void ATF_PlayerController::StartShooting(const FInputActionValue& InputValue)
+{
+	if (PlayerCharacter->GetIsCarryingWeapon())
+	{
+		PlayerCharacter->SetIsShooting(true);
+	}
+}
+
+void ATF_PlayerController::StopShooting(const FInputActionValue& InputValue)
+{
+	if (PlayerCharacter->GetIsCarryingWeapon())
+	{
+		PlayerCharacter->SetIsShooting(false);
+	}
 }
 
 void ATF_PlayerController::Move(const FInputActionValue& InputValue)

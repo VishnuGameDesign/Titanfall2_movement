@@ -6,8 +6,6 @@
 #include "PlayerStates/Base/PlayerBaseState.h"
 #include "WallRun.generated.h"
 
-class AController;
-
 UCLASS()
 class TITANFALL2_MOVEMENT_API UWallRun : public UPlayerBaseState
 {
@@ -16,7 +14,4 @@ protected:
 	virtual void EnterState(AActor* Owner) override;
 	virtual void TickState(float DeltaTime) override;
 	virtual void ExitState() override;
-
-private:
-	float ElapsedTime = 0.0f;
 };

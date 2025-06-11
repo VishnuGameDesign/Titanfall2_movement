@@ -14,8 +14,6 @@ class TITANFALL2_MOVEMENT_API UPlayerBaseState : public UStateBase
 {
 	GENERATED_BODY()
 	
-public:
-	
 protected:
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<ATF_Player> PlayerCharacter;

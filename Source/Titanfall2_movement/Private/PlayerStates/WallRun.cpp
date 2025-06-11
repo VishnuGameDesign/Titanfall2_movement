@@ -1,36 +1,33 @@
 
 // Copyright by Vishnu Suresh
 
-
 #include "PlayerStates/WallRun.h"
 #include "Character/Player/TF_Player.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Interfaces/PlayerControllerInterface.h"
 
 void UWallRun::EnterState(AActor* Owner)
 {
 	Super::EnterState(Owner);
 	PlayerCharacter->SetIsRunningOnWall(true);
-	ElapsedTime = 0.0f;
-	UE_LOG(LogTemp, Warning, TEXT("entered"));
 }
 
 void UWallRun::TickState(float DeltaTime)
 {
 	Super::TickState(DeltaTime);
-	ElapsedTime += DeltaTime;
-	UE_LOG(LogTemp, Warning, TEXT("ELAPSED_TIME: %f"), ElapsedTime);
 	if (PlayerCharacter->GetWallDetected())
 	{
+		PlayerCharacter->bUseControllerRotationYaw = false;
+		PlayerCharacter->GetCharacterMovement()->bOrientRotationToMovement = false;
+		
 		const FVector LaunchVelocity = FVector::CrossProduct(PlayerCharacter->GetWallNormal(),
 			PlayerCharacter->GetActorUpVector()) * PlayerCharacter->GetWallRunSpeed() * PlayerCharacter->GetFacingDirection();
 
 		PlayerCharacter->LaunchCharacter(LaunchVelocity, true, true);
 	}
-	if (ElapsedTime >= PlayerCharacter->GetWallRunCooldown())
+	else
 	{
-		PlayerCharacter->SetCheckForWalls(false);
-		PlayerCharacter->SetIsRunningOnWall(false);
-		RequestStateSwitch("Jump");
+		IsPlayerMoving() ? RequestStateSwitch("Idle") : RequestStateSwitch("Walk");
 	}
 
 	if (PlayerControllerInterface->HasJumpRequested())
@@ -42,6 +39,8 @@ void UWallRun::TickState(float DeltaTime)
 void UWallRun::ExitState()
 {
 	Super::ExitState();
+	PlayerCharacter->bUseControllerRotationYaw = true;
+	PlayerCharacter->GetCharacterMovement()->bOrientRotationToMovement = true;
 	PlayerCharacter->SetIsRunningOnWall(false);
 }
 

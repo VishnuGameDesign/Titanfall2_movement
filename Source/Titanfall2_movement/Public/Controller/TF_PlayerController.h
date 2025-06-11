@@ -7,6 +7,7 @@
 #include "Interfaces/PlayerControllerInterface.h"
 #include "TF_PlayerController.generated.h"
 
+class IInteractableInterface;
 class ATF_Player;
 class UInputMappingContext;
 class UInputAction;
@@ -64,12 +65,18 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Input Actions")
 	TObjectPtr<UInputAction> DropAction;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Input Actions")
+	TObjectPtr<UInputAction> InteractAction;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Input Actions")
+	TObjectPtr<UInputAction> ShootAction;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Control Rotation")
 	float ClampAngle = 50.0f;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Player")
 	TObjectPtr<ATF_Player> PlayerCharacter;
-	
+
 	void Move(const FInputActionValue& InputValue);
 	void Look(const FInputActionValue& InputValue);
 	void StartSprint(const FInputActionValue& InputValue);
@@ -78,6 +85,9 @@ private:
 	void StopJump(const FInputActionValue& InputValue);
 	void StartCrouch(const FInputActionValue& InputValue);
 	void StopCrouch(const FInputActionValue& InputValue);
+	void CheckForInteractable(const FInputActionValue& InputValue);
+	void StartShooting(const FInputActionValue& InputValue);
+	void StopShooting(const FInputActionValue& InputValue);
 
 	bool bCrouchPressed = false;
 	bool bSprintRequested = false;

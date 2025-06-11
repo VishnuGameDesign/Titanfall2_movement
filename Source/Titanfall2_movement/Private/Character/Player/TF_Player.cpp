@@ -5,7 +5,9 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "DrawDebugHelpers.h"
-#include "Controller/TF_PlayerController.h"
+#include "Components/SphereComponent.h"
+#include "Interfaces/InteractableInterface.h"
+#include "Interfaces/PickupableInterface.h"
 
 ATF_Player::ATF_Player()
 {
@@ -23,6 +25,14 @@ ATF_Player::ATF_Player()
 
 	GetMesh()->SetOwnerNoSee(true);
 	GetCharacterMovement()->GetNavAgentPropertiesRef().bCanCrouch = true;
+
+	InteractionSphere = CreateDefaultSubobject<USphereComponent>(TEXT("InteractionSphereComponent"));
+	InteractionSphere->SetupAttachment(PlayerMesh);
+	InteractionSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	InteractionSphere->SetCollisionObjectType(ECC_WorldDynamic);
+	InteractionSphere->SetCollisionResponseToAllChannels(ECR_Ignore);
+	InteractionSphere->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Overlap);
+	InteractionSphere->SetGenerateOverlapEvents(true);
 }
 
 void ATF_Player::BeginPlay()
@@ -66,15 +76,64 @@ void ATF_Player::Tick(float DeltaTime)
 		}
 	}
 	
-	/* Camera Tilt when Wall Running */
 	if (bIsRunningOnWall)
 	{
+		/* Camera Tilt when Wall Running */
 		const float Roll = GetCameraTiltAngle() * GetFacingDirection();
 		CameraTiltTo(Roll);
+
+		/* Wall Run Duration Check */
+		ElapsedTime += DeltaTime;
+		if (ElapsedTime >= WallRunDuration)
+		{
+			GetStateMachineComponent()->SwitchStateByKey("Walk");
+			ElapsedTime = 0.0f;
+			SetCheckForWalls(false);
+			bCooldownStarted = true;
+		}
 	}
 	else
 	{
 		CameraTiltTo(0.0f);
+
+		/* Wall Run Cooldown */
+		ElapsedTime = 0.0f;
+		if (bCooldownStarted)
+		{
+			WallRunCooldown += DeltaTime;
+			if (WallRunCooldown >= 1.0f)
+			{
+				SetCheckForWalls(true);
+				WallRunCooldown = 0.0f;
+				bCooldownStarted = false;
+			}
+		}
+	}
+}
+
+void ATF_Player::InitInteraction()
+{
+	TArray<AActor*> OverlappingActors;
+	InteractionSphere->GetOverlappingActors(OverlappingActors);
+	
+	for (AActor* OverlappingActor : OverlappingActors)
+	{
+		if (OverlappingActor->GetClass()->ImplementsInterface(UInteractableInterface::StaticClass()))
+		{
+			Interactable = TScriptInterface<IInteractableInterface>(OverlappingActor);
+			if (Interactable)
+			{
+				Interactable->Interact();
+			}
+		}
+		if (OverlappingActor->GetClass()->ImplementsInterface(UPickupableInterface::StaticClass()))
+		{
+			Pickupable = TScriptInterface<IPickupableInterface>(OverlappingActor);
+			if (Pickupable)
+			{
+				Pickupable->Pickup(this);
+			}
+		}
 	}
 }
 
@@ -88,7 +147,7 @@ AActor* ATF_Player::CheckWall(const FVector& Direction, FHitResult& HitResult)
 
 	if (GetWorld()->LineTraceSingleByChannel(HitResult, TraceStart, TraceEnd, ECC_WALL_RUN, Params))
 	{
-		DrawDebugLine(GetWorld(), TraceStart, TraceEnd, HitResult.bBlockingHit ? FColor::Blue : FColor::Red, true, 1.f, 0, 1.f);
+		// DrawDebugLine(GetWorld(), TraceStart, TraceEnd, HitResult.bBlockingHit ? FColor::Blue : FColor::Red, true, 1.f, 0, 1.f);
 		if (HitResult.bBlockingHit && IsValid(HitResult.GetActor()))
 		{
 			return HitResult.GetActor();
@@ -104,13 +163,9 @@ void ATF_Player::StartWallRunIfRightDirection(const FVector& Normal)
 	{
 		WallNormal = Normal;
 		/* Switch to WallRunning State */
-		ATF_PlayerController* PlayerController = Cast<ATF_PlayerController>(GetController());
-		if (PlayerController)
+		if (GetCharacterMovement()->IsFalling() && bIsRunningOnWall == false)				
 		{
-			if (GetCharacterMovement()->IsFalling() && bIsRunningOnWall == false)				
-			{
-				GetStateMachineComponent()->SwitchStateByKey("WallRun");
-			}
+			GetStateMachineComponent()->SwitchStateByKey("WallRun");
 		}
 	}
 }
